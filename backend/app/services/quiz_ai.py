@@ -193,7 +193,7 @@ B
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "llama-3.3-70b-versatile",
+                        "model": "llama-3.1-8b-instant",
                         "messages": [
                             {"role": "system", "content": "Siz O'zbek tilida quiz savollari yaratuvchi AI siz. Har bir savoldan keyin to'g'ri javobni A, B, C yoki D harfi bilan yozing."},
                             {"role": "user", "content": prompt}

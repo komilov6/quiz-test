@@ -75,7 +75,7 @@ class QuizAI:
         
         if settings.USE_OLLAMA:
             content = await self._call_ollama(prompt)
-                elif settings.USE_GROQ and settings.GROQ_API_KEY:
+        elif settings.USE_GROQ and settings.GROQ_API_KEY:
             try:
                 content = await self._call_groq(prompt)
             except Exception as e:
@@ -91,7 +91,7 @@ class QuizAI:
                 return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
             raise Exception("AI ishlashi uchun API key kerak yoki bazada ma'lumot yo'q.")
         
-                questions = self._parse_quiz(content, question_count)
+        questions = self._parse_quiz(content, question_count)
         
         # Agarda AI xato qilsa yoki kam savol bersa, bazadagi savollardan qo'shib to'ldiramiz
         if len(questions) < question_count and db_questions_list:

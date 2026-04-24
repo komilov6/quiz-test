@@ -1,16 +1,19 @@
-# https://git-scm.com/docs/gitignore
-
-# Node
+# Dependencies
 node_modules/
-dist/
-.env*
-!.env.example
-
-# Python
 venv/
 __pycache__/
-*.sqlite3
+*.pyc
+.env
 *.db
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+nohup.out
 
 # OS
 .DS_Store
+Thumbs.db

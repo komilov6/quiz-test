@@ -7,6 +7,7 @@ import os
 from app.api import router
 from app.core.database import init_db
 from app.core.config import settings
+from app.models import models
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

@@ -11,7 +11,6 @@ const Dashboard = () => {
     average_score: 0,
     top_scores: [] as any[]
   })
-  const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}')
 
@@ -21,25 +20,13 @@ const Dashboard = () => {
 
   const loadData = async () => {
     try {
-      const [statsData, usersData] = await Promise.all([
-        api.getDashboardStats(),
-        api.getUsers ? api.getUsers() : Promise.resolve([])
-      ])
+      const statsData = await api.getDashboardStats()
       setStats(statsData)
-      setUsers(usersData)
     } catch (err) {
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }
-
-  const getUserName = (userId: number) => {
-    const user = users.find(u => u.id === userId)
-    if (user) {
-      return `${user.name} ${user.surname}`
-    }
-    return `Foydalanuvchi #${userId}`
   }
 
   const isCurrentUser = (userId: number) => {
@@ -166,7 +153,7 @@ const Dashboard = () => {
                   <div>
                     <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>{score.topic}</p>
                     <p className={`text-sm ${isCurrentUser(score.user_id) ? 'text-purple-600 dark:text-purple-400 font-medium' : theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
-                      {isCurrentUser(score.user_id) ? 'Siz: ' : ''}{getUserName(score.user_id)}
+                      {isCurrentUser(score.user_id) ? 'Siz: ' : ''}{score.user_name}
                     </p>
                   </div>
                 </div>

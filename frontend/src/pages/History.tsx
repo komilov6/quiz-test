@@ -66,8 +66,15 @@ const History = () => {
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
               {results.map((result) => (
-                <tr key={result.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="px-6 py-4 font-medium text-gray-800 dark:text-gray-200">{result.topic_name}</td>
+                <tr 
+                  key={result.id} 
+                  onClick={() => navigate(`/results/${result.id}`)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                >
+                  <td className="px-6 py-4">
+                    <p className="font-bold text-gray-800 dark:text-gray-100">{result.topic_name}</p>
+                    <p className="text-xs text-blue-500 dark:text-blue-400 font-medium">Batafsil ko'rish →</p>
+                  </td>
                   <td className="px-6 py-4">
                     <span className="text-green-600 dark:text-green-400 font-bold">{result.score}</span>
                     <span className="text-gray-400 dark:text-gray-500"> / {result.total}</span>
@@ -87,9 +94,9 @@ const History = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 font-medium">
                       <Clock className="w-4 h-4" />
-                      {new Date(result.completed_at).toLocaleDateString('uz-UZ')}
+                      {result.completed_at ? new Date(result.completed_at).toLocaleString('uz-UZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Hozir'}
                     </div>
                   </td>
                 </tr>

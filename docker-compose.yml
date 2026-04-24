@@ -1,12 +1,27 @@
 version: '3.8'
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: quiz_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: quiz_root_pass
+      MYSQL_DATABASE: quiz_db
+      MYSQL_USER: quiz_user
+      MYSQL_PASSWORD: quiz_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
   backend:
     build: ./backend
     ports:
       - "8000:8000"
+    depends_on:
+      - db
     environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./ai_test.db
+      - DATABASE_URL=mysql+aiomysql://quiz_user:quiz_pass@db:3306/quiz_db
       - USE_OLLAMA=true
       - OLLAMA_URL=http://host.docker.internal:11434
       - OLLAMA_MODEL=llama3.2
@@ -25,3 +40,4 @@ services:
 
 volumes:
   test_workspace:
+  mysql_data:

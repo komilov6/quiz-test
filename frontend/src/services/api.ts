@@ -40,10 +40,11 @@ const api = {
     return response.data
   },
 
-  async submitQuiz(quizId: number, answers: number[]) {
+  async submitQuiz(quizId: number, answers: number[], userId: number) {
     const response = await client.post('/api/v1/submit-quiz', {
       quiz_id: quizId,
-      answers: answers
+      answers: answers,
+      user_id: userId
     })
     return response.data
   },

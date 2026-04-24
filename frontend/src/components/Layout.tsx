@@ -24,8 +24,8 @@ const Layout = () => {
     if (userData) {
       const parsed = JSON.parse(userData)
       setUser(parsed)
-      setEditName(parsed.name)
-      setEditSurname(parsed.surname)
+      setEditName(parsed.name || '')
+      setEditSurname(parsed.surname || '')
       setEditUsername(parsed.username || '')
       setEditPassword('')
     }
@@ -38,11 +38,11 @@ const Layout = () => {
   }
 
   const handleSaveProfile = async () => {
-    if (!editName.trim() || !editSurname.trim() || !editUsername.trim()) return
+    if (!editName.trim() || !editUsername.trim()) return
     
     setSaving(true)
     try {
-      const updateData: any = { name: editName, surname: editSurname, username: editUsername }
+      const updateData: any = { name: editName, surname: editSurname || '', username: editUsername }
       if (editPassword.trim()) {
         updateData.password = editPassword
       }
@@ -157,7 +157,7 @@ const Layout = () => {
         </nav>
       )}
       
-      <main className={`${isTestPage ? '' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}`}>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Outlet />
       </main>
 
@@ -235,7 +235,7 @@ const Layout = () => {
               </button>
               <button
                 onClick={handleSaveProfile}
-                disabled={saving || !editName.trim() || !editSurname.trim() || !editUsername.trim()}
+                disabled={saving || !editName.trim() || !editUsername.trim()}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition"
               >
                 <Save className="w-4 h-4" />

@@ -10,31 +10,85 @@ class QuizAI:
         self.ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")
         self.model = os.getenv("OLLAMA_MODEL", "llama3.2")
 
-    async def generate_quiz(self, topic_name: str, topic_content: str, question_count: int, difficulty: str = "medium") -> List[Dict[str, Any]]:
-        prompt = self._build_quiz_prompt(topic_name, topic_content, question_count, difficulty)
+    async def generate_quiz(self, topic_name: str, topic_content: str, question_count: int, difficulty: str = "medium", db=None) -> List[Dict[str, Any]]:
+        # 1-QADAM: AI foydalanuvchi niyatini tushunadi (Semantic normalization)
+        # Masalan: "pyton" -> "Python", "funsiyalar" -> "functions"
+        refined_topic = topic_name
+        if settings.GROQ_API_KEY:
+            try:
+                # Oddiy prompt orqali niyatni aniqlash
+                intent_prompt = f"Foydalanuvchi yozgan ushbu mavzu nomini to'g'rilang va asosiy kalit so'zlarni chiqaring: '{topic_name}'. Faqat to'g'rilangan nomni yozing."
+                refined_topic = await self._call_groq(intent_prompt)
+                refined_topic = refined_topic.strip().split('\n')[0]
+            except:
+                refined_topic = topic_name
+
+        # 2-QADAM: Bazadan (MySQL) ushbu to'g'rilangan mavzuga doir savollarni qidirish
+        kb_context = ""
+        db_questions_list = []
+        if db:
+            from sqlalchemy import select, or_
+            from app.models.models import Question, Topic, QuestionOption
+            from sqlalchemy.orm import selectinload
+            
+            # Kalit so'zlar bo'yicha qidirish (murakkabroq qidiruv)
+            search_terms = refined_topic.split()
+            filters = [Topic.name.ilike(f"%{term}%") for term in search_terms] + \
+                      [Question.body.ilike(f"%{term}%") for term in search_terms]
+            
+            result = await db.execute(
+                select(Question).join(Topic).options(selectinload(Question.options))
+                .where(or_(*filters)).limit(50)
+            )
+            db_questions = result.scalars().all()
+            
+            if db_questions:
+                kb_context = "\n\nBAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):\n"
+                for i, q in enumerate(db_questions, 1):
+                    opts = [opt.body for opt in sorted(q.options, key=lambda x: x.sort_order)]
+                    correct_idx = next((idx for idx, opt in enumerate(q.options) if opt.is_correct), 0)
+                    db_questions_list.append({
+                        "question": q.body,
+                        "options": opts,
+                        "correct_answer": correct_idx,
+                        "explanation": q.explanation or ""
+                    })
+                    kb_context += f"- Savol: {q.body}\n"
+
+        # 3-QADAM: Bazada ma'lumot borligini tekshirish
+        if not db_questions_list:
+            raise Exception(f"Kechirasiz, ushbu fan ('{refined_topic}') hozircha bilimlar bazasida mavjud emas. Iltimos, bazaga yuklangan fanlardan foydalaning (masalan: Python).")
+
+        # 4-QADAM: AI savollarni bazaga tayanib yoki o'xshatib tuzadi
+        prompt = self._build_quiz_prompt(refined_topic, topic_content, question_count, difficulty, kb_context)
         
         if settings.USE_OLLAMA:
             content = await self._call_ollama(prompt)
         elif settings.USE_GROQ and settings.GROQ_API_KEY:
-            content = await self._call_groq(prompt)
-        elif settings.USE_GROK and settings.OPENAI_API_KEY:
-            content = await self._call_grok(prompt)
+            try:
+                content = await self._call_groq(prompt)
+            except Exception as e:
+                print(f"Groq xatolik (limit): {e}")
+                import random
+                return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
         else:
-            content = await self._call_groq(prompt)
+            if db_questions_list:
+                import random
+                return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
+            raise Exception("AI ishlashi uchun API key kerak yoki bazada ma'lumot yo'q.")
         
         questions = self._parse_quiz(content, question_count)
         
-        while len(questions) < question_count:
-            questions.append({
-                "question": f"{topic_name} haqida qo'shimcha savol",
-                "options": ["Birinchi javob", "Ikkinchi javob", "Uchinchi javob", "To'rtinchi javob"],
-                "correct_answer": 0,
-                "explanation": ""
-            })
+        # Agarda AI xato qilsa yoki kam savol bersa, bazadagi savollardan qo'shib to'ldiramiz
+        if len(questions) < question_count and db_questions_list:
+            for db_q in db_questions_list:
+                if len(questions) >= question_count: break
+                if not any(q['question'] == db_q['question'] for q in questions):
+                    questions.append(db_q)
         
         return questions[:question_count]
 
-    def _build_quiz_prompt(self, topic_name: str, topic_content: str, question_count: int, difficulty: str = "medium") -> str:
+    def _build_quiz_prompt(self, topic_name: str, topic_content: str, question_count: int, difficulty: str = "medium", kb_context: str = "") -> str:
         import re
         cleaned_content = topic_content
         if cleaned_content:
@@ -51,6 +105,7 @@ class QuizAI:
         info = f"\n\nMavzu haqida qo'shimcha ma'lumot:\n{cleaned_content}" if cleaned_content.strip() else ""
          
         return f'''Mavzu: {topic_name}
+{kb_context}
 {info}
 
 QOIDALAR:
@@ -90,7 +145,7 @@ C) 1992-yil 1-sentabr
 D) 1991-yil 1-sentabr
 B
 
-{question_count} ta SAVOL YARATING - SHU FORMATGA TEKIS QILING!'''
+{question_count} ta SAVOL YARATING - SHU FORMATGA TO'LIQ VA TEKIS QILING! HAR BIR SAVOL RAQAMLANMASIN, FAQAT Q: BILAN BOSHLANSIN. SAVOLLAR SONI ANIQ {question_count} TA BO'LSIN!'''
 
     async def _call_ollama(self, prompt: str) -> str:
         async with httpx.AsyncClient(timeout=300.0) as client:
@@ -102,13 +157,16 @@ B
                     "stream": False,
                     "options": {
                         "temperature": 0.5,
-                        "num_predict": 3000
+                        "num_predict": 5000
                     }
                 }
             )
             return response.json().get("response", "")
 
     async def _call_groq(self, prompt: str) -> str:
+        if not settings.GROQ_API_KEY:
+            raise Exception("Groq API key topilmadi. Iltimos, .env faylini tekshiring.")
+            
         async with httpx.AsyncClient(timeout=180.0) as client:
             try:
                 response = await client.post(
@@ -118,15 +176,18 @@ B
                         "Content-Type": "application/json"
                     },
                     json={
-                        "model": "llama-3.1-8b-instant",
+                        "model": "llama-3.3-70b-versatile",
                         "messages": [
                             {"role": "system", "content": "Siz O'zbek tilida quiz savollari yaratuvchi AI siz. Har bir savoldan keyin to'g'ri javobni A, B, C yoki D harfi bilan yozing."},
                             {"role": "user", "content": prompt}
                         ],
                         "temperature": 0.5,
-                        "max_tokens": 4096
+                        "max_tokens": 8192
                     }
                 )
+                if response.status_code == 429:
+                    raise Exception("Groq limitga uchradi (Rate limit). Iltimos, bir ozdan keyin urinib ko'ring yoki bazadagi savollardan foydalaning.")
+                
                 print(f"Groq API status: {response.status_code}")
                 print(f"Groq API response: {response.text[:200]}...")
                 data = response.json()
@@ -139,6 +200,9 @@ B
                 raise
 
     async def _call_grok(self, prompt: str) -> str:
+        if not settings.OPENAI_API_KEY:
+            raise Exception("OpenAI/Grok API key topilmadi. Iltimos, .env faylini tekshiring.")
+
         async with httpx.AsyncClient(timeout=120.0) as client:
             response = await client.post(
                 "https://api.x.ai/v1/chat/completions",

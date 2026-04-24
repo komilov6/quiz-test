@@ -23,16 +23,27 @@ class QuizAI:
             except:
                 refined_topic = topic_name
 
-        # 2-QADAM: Bazadan (MySQL) ushbu to'g'rilangan mavzuga doir savollarni qidirish
+                    # 2-QADAM: Bazadan (MySQL) ushbu to'g'rilangan mavzuga doir fan/mavzu borligini tekshirish
         kb_context = ""
         db_questions_list = []
+        is_valid_subject = False
         if db:
             from sqlalchemy import select, or_
-            from app.models.models import Question, Topic, QuestionOption
+            from app.models.models import Question, Topic, Subject, QuestionOption
             from sqlalchemy.orm import selectinload
             
-            # Kalit so'zlar bo'yicha qidirish (murakkabroq qidiruv)
             search_terms = refined_topic.split()
+            
+            # Check if subject/topic exists in DB
+            subject_filters = [Subject.name.ilike(f"%{term}%") for term in search_terms]
+            topic_filters = [Topic.name.ilike(f"%{term}%") for term in search_terms]
+            
+            valid_check = await db.execute(
+                select(Topic).join(Subject).where(or_(*subject_filters, *topic_filters)).limit(1)
+            )
+            is_valid_subject = valid_check.scalars().first() is not None
+            
+            # Kalit so'zlar bo'yicha qidirish (murakkabroq qidiruv)
             filters = [Topic.name.ilike(f"%{term}%") for term in search_terms] + \
                       [Question.body.ilike(f"%{term}%") for term in search_terms]
             
@@ -43,7 +54,10 @@ class QuizAI:
             db_questions = result.scalars().all()
             
             if db_questions:
-                kb_context = "\n\nBAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):\n"
+                kb_context = "
+
+BAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):
+"
                 for i, q in enumerate(db_questions, 1):
                     opts = [opt.body for opt in sorted(q.options, key=lambda x: x.sort_order)]
                     correct_idx = next((idx for idx, opt in enumerate(q.options) if opt.is_correct), 0)
@@ -53,10 +67,11 @@ class QuizAI:
                         "correct_answer": correct_idx,
                         "explanation": q.explanation or ""
                     })
-                    kb_context += f"- Savol: {q.body}\n"
+                    kb_context += f"- Savol: {q.body}
+"
 
         # 3-QADAM: Bazada ma'lumot borligini tekshirish
-        if not db_questions_list and not topic_content:
+        if not is_valid_subject and not topic_content:
             raise Exception(f"Kechirasiz, ushbu fan ('{refined_topic}') hozircha bilimlar bazasida mavjud emas. Iltimos, bazaga yuklangan fanlardan foydalaning (masalan: Python).")
 
         # 4-QADAM: AI savollarni bazaga tayanib yoki o'xshatib tuzadi

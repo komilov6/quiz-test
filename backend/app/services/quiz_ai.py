@@ -75,20 +75,23 @@ class QuizAI:
         
         if settings.USE_OLLAMA:
             content = await self._call_ollama(prompt)
-        elif settings.USE_GROQ and settings.GROQ_API_KEY:
+                elif settings.USE_GROQ and settings.GROQ_API_KEY:
             try:
                 content = await self._call_groq(prompt)
             except Exception as e:
                 print(f"Groq xatolik (limit): {e}")
-                import random
-                return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
+                if db_questions_list:
+                    import random
+                    return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
+                else:
+                    raise Exception(f"AI API xatolik yuz berdi va bazada muqobil savollar yo'q. Xato: {str(e)}")
         else:
             if db_questions_list:
                 import random
                 return random.sample(db_questions_list, min(question_count, len(db_questions_list)))
             raise Exception("AI ishlashi uchun API key kerak yoki bazada ma'lumot yo'q.")
         
-        questions = self._parse_quiz(content, question_count)
+                questions = self._parse_quiz(content, question_count)
         
         # Agarda AI xato qilsa yoki kam savol bersa, bazadagi savollardan qo'shib to'ldiramiz
         if len(questions) < question_count and db_questions_list:
@@ -96,7 +99,10 @@ class QuizAI:
                 if len(questions) >= question_count: break
                 if not any(q['question'] == db_q['question'] for q in questions):
                     questions.append(db_q)
-        
+                    
+        if not questions:
+            raise Exception("AI savol tuza olmadi yoki API kalit ishlamayapti. Iltimos, qaytadan urinib ko'ring yoki boshqa mavzu tanlang.")
+            
         return questions[:question_count]
 
     def _build_quiz_prompt(self, topic_name: str, topic_content: str, question_count: int, difficulty: str = "medium", kb_context: str = "") -> str:

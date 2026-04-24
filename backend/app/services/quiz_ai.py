@@ -182,39 +182,49 @@ B
 
     async def _call_groq(self, prompt: str) -> str:
         if not settings.GROQ_API_KEY:
-            raise Exception("Groq API key topilmadi. Iltimos, .env faylini tekshiring.")
+            raise Exception("Groq API key topilmadi. Iltimos, .env faylini yoki Render sozlamalarini tekshiring.")
             
-        async with httpx.AsyncClient(timeout=180.0) as client:
-            try:
-                response = await client.post(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    headers={
-                        "Authorization": f"Bearer {settings.GROQ_API_KEY}",
-                        "Content-Type": "application/json"
-                    },
-                    json={
-                        "model": "llama-3.1-8b-instant",
-                        "messages": [
-                            {"role": "system", "content": "Siz O'zbek tilida quiz savollari yaratuvchi AI siz. Har bir savoldan keyin to'g'ri javobni A, B, C yoki D harfi bilan yozing."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        "temperature": 0.5,
-                        "max_tokens": 8192
-                    }
-                )
-                if response.status_code == 429:
-                    raise Exception("Groq limitga uchradi (Rate limit). Iltimos, bir ozdan keyin urinib ko'ring yoki bazadagi savollardan foydalaning.")
-                
-                print(f"Groq API status: {response.status_code}")
-                print(f"Groq API response: {response.text[:200]}...")
-                data = response.json()
-                if "choices" not in data:
-                    print("Groq API xatolik:", data)
-                    raise Exception(f"Groq API xatolik: {data}")
-                return data["choices"][0]["message"]["content"]
-            except Exception as e:
-                print(f"Groq chaqiruv xatoligi: {e}")
-                raise
+        import asyncio
+        max_retries = 3
+        for attempt in range(max_retries):
+            async with httpx.AsyncClient(timeout=180.0) as client:
+                try:
+                    response = await client.post(
+                        "https://api.groq.com/openai/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {settings.GROQ_API_KEY.strip()}",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": "llama3-8b-8192",
+                            "messages": [
+                                {"role": "system", "content": "Siz O'zbek tilida quiz savollari yaratuvchi AI siz. Har bir savoldan keyin to'g'ri javobni A, B, C yoki D harfi bilan yozing."},
+                                {"role": "user", "content": prompt}
+                            ],
+                            "temperature": 0.5,
+                            "max_tokens": 4096
+                        }
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        return data["choices"][0]["message"]["content"]
+                    
+                    if response.status_code == 429:
+                        if attempt < max_retries - 1:
+                            await asyncio.sleep(2 ** attempt) # Exponential backoff
+                            continue
+                        raise Exception("Groq limitga uchradi (Rate limit). Iltimos, 1 daqiqa kuting.")
+                    
+                    error_data = response.json()
+                    error_msg = error_data.get("error", {}).get("message", str(error_data))
+                    raise Exception(f"Groq API xatolik: {error_msg}")
+                    
+                except Exception as e:
+                    if attempt < max_retries - 1:
+                        await asyncio.sleep(1)
+                        continue
+                    raise e
 
     async def _call_grok(self, prompt: str) -> str:
         if not settings.OPENAI_API_KEY:

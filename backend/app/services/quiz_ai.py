@@ -56,7 +56,7 @@ class QuizAI:
                     kb_context += f"- Savol: {q.body}\n"
 
         # 3-QADAM: Bazada ma'lumot borligini tekshirish
-        if not db_questions_list:
+        if not db_questions_list and not topic_content:
             raise Exception(f"Kechirasiz, ushbu fan ('{refined_topic}') hozircha bilimlar bazasida mavjud emas. Iltimos, bazaga yuklangan fanlardan foydalaning (masalan: Python).")
 
         # 4-QADAM: AI savollarni bazaga tayanib yoki o'xshatib tuzadi

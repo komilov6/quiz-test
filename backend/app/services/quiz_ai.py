@@ -54,10 +54,7 @@ class QuizAI:
             db_questions = result.scalars().all()
             
             if db_questions:
-                kb_context = "
-
-BAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):
-"
+                kb_context = "\\n\\nBAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):\\n"
                 for i, q in enumerate(db_questions, 1):
                     opts = [opt.body for opt in sorted(q.options, key=lambda x: x.sort_order)]
                     correct_idx = next((idx for idx, opt in enumerate(q.options) if opt.is_correct), 0)
@@ -67,8 +64,7 @@ BAZADAGI MAVJUD SAVOLLAR (BULARDAN FOYDALANING):
                         "correct_answer": correct_idx,
                         "explanation": q.explanation or ""
                     })
-                    kb_context += f"- Savol: {q.body}
-"
+                    kb_context += f"- Savol: {q.body}\\n"
 
         # 3-QADAM: Bazada ma'lumot borligini tekshirish
         if not is_valid_subject and not topic_content:

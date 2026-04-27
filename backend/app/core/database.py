@@ -14,17 +14,18 @@ query_params = parse_qs(parsed_url.query)
 # SSL talab qilinishini aniqlash (Aiven xostlari uchun avtomatik yoki parametr orqali)
 is_ssl_required = (
     "ssl_mode" in query_params or 
+    "ssl-mode" in query_params or
     "ssl" in query_params or 
     (parsed_url.hostname and "aivencloud.com" in parsed_url.hostname)
 )
 
 if is_ssl_required:
     # URL dan SSL parametrlarini olib tashlash (sqlalchemy/aiomysql uchun connect_args orqali beramiz)
-    new_query = "&".join([f"{k}={v[0]}" for k, v in query_params.items() if k not in ["ssl_mode", "ssl"]])
+    new_query = "&".join([f"{k}={v[0]}" for k, v in query_params.items() if k not in ["ssl_mode", "ssl-mode", "ssl"]])
     # URL ni qayta yig'ish
     db_url = parsed_url._replace(query=new_query).geturl()
     
-    # SSL context yaratish (sertifikatni tekshirmaslik uchun, Aiven uchun mos keladi)
+    # SSL context yaratish
     ssl_ctx = ssl.create_default_context()
     ssl_ctx.check_hostname = False
     ssl_ctx.verify_mode = ssl.CERT_NONE

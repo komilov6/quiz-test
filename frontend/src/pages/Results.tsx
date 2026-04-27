@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowRight, AlertCircle, Lightbulb, Loader2, Instagram, Send, Phone, Home, RefreshCw, CheckCircle, XCircle } from 'lucide-react'
+import { ArrowRight, AlertCircle, Lightbulb, Loader2, Instagram, Send, Phone, Home, RefreshCw, CheckCircle, XCircle, Mail } from 'lucide-react'
 import api from '../services/api'
 
 const Results = () => {
@@ -167,19 +167,12 @@ const Results = () => {
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-            <button 
-              onClick={() => navigate('/')}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition font-medium"
-            >
-              <Home className="w-5 h-5" />
-              Bosh sahifaga qaytish
-            </button>
+          <div className="flex justify-center mt-6">
             <button 
               onClick={() => navigate('/quiz')}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 text-white hover:bg-purple-700 rounded-xl transition font-medium"
+              className="flex items-center justify-center gap-3 px-8 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 rounded-2xl transition-all font-bold shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1 active:scale-95"
             >
-              <RefreshCw className="w-5 h-5" />
+              <RefreshCw className="w-6 h-6" />
               Yangi test yaratish
             </button>
           </div>
@@ -328,27 +321,48 @@ const Results = () => {
 
       {/* Footer for completed results */}
       {submitted && (
-        <footer className="mt-12 py-6 border-t border-gray-200 dark:border-gray-700">
+        <footer className="mt-16 py-10 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
           <div className="max-w-4xl mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="text-center md:text-left">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  © {new Date().getFullYear()} AI Quiz Master
-                </p>
+            <div className="flex flex-col items-center space-y-8">
+              {/* Social Icons */}
+              <div className="flex flex-wrap justify-center gap-6">
+                <a href="https://t.me/KomilovJahongir_bot" target="_blank" rel="noopener noreferrer" 
+                   className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-gray-700 shadow-sm hover:shadow-md hover:shadow-blue-500/10 transition-all hover:-translate-y-1">
+                  <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">Telegram</span>
+                </a>
+                
+                <a href="https://instagram.com/j.komilov__" target="_blank" rel="noopener noreferrer"
+                   className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-gray-700 shadow-sm hover:shadow-md hover:shadow-pink-500/10 transition-all hover:-translate-y-1">
+                  <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400 group-hover:scale-110 transition-transform">
+                    <Instagram className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">Instagram</span>
+                </a>
+
+                <a href="tel:+998337012686"
+                   className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-gray-700 shadow-sm hover:shadow-md hover:shadow-green-500/10 transition-all hover:-translate-y-1">
+                  <div className="p-2 rounded-xl bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform">
+                    <Phone className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">Bog'lanish</span>
+                </a>
+
+                <a href="mailto:komilovjahongir.22@gmail.com"
+                   className="group flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-gray-700 shadow-sm hover:shadow-md hover:shadow-purple-500/10 transition-all hover:-translate-y-1">
+                  <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 group-hover:scale-110 transition-transform">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <span className="font-semibold text-gray-700 dark:text-gray-200">Gmail</span>
+                </a>
               </div>
-              <div className="flex gap-4">
-                <a href="https://instagram.com/j.komilov__" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-pink-100 dark:hover:bg-pink-900 transition">
-                  <Instagram className="w-5 h-5 text-gray-700 dark:text-white" />
-                </a>
-                <a href="https://t.me/KomilovJahongir_bot" target="_blank" rel="noopener noreferrer" className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-blue-100 dark:hover:bg-blue-900 transition">
-                  <Send className="w-5 h-5 text-gray-700 dark:text-white" />
-                </a>
-                <a href="tel:+998337012686" className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-green-100 dark:hover:bg-green-900 transition">
-                  <Phone className="w-5 h-5 text-gray-700 dark:text-white" />
-                </a>
-                <a href="mailto:komilovjahongir.22@gmail.com" className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 hover:text-purple-500">
-                  komilovjahongir.22@gmail.com
-                </a>
+
+              <div className="text-center">
+                <p className="text-gray-400 dark:text-gray-500 text-sm font-medium">
+                  © {new Date().getFullYear()} AI Quiz Master • Barcha huquqlar himoyalangan
+                </p>
               </div>
             </div>
             

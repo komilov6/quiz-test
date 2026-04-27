@@ -14,6 +14,7 @@ const QuizPage = () => {
   const [contentType, setContentType] = useState<'text' | 'file'>('text')
   const [aiMode, setAiMode] = useState<'auto' | 'manual'>('auto')
   const [loading, setLoading] = useState(false)
+  const [fileLoading, setFileLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
 
@@ -26,14 +27,22 @@ const QuizPage = () => {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        setTopicContent(event.target?.result as string || '')
+      setFileLoading(true)
+      setError('')
+      try {
+        const result = await api.extractText(file)
+        setTopicContent(result.text || '')
+        if (!result.text) {
+          setError('Fayldan matnni ajratib bo\'lmadi')
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.detail || 'Faylni o\'qishda xatolik yuz berdi')
+      } finally {
+        setFileLoading(false)
       }
-      reader.readAsText(file)
     }
   }
 
@@ -302,21 +311,31 @@ const QuizPage = () => {
               </div>
 
               {contentType === 'text' ? (
-                <textarea
-                  value={topicContent}
-                  onChange={(e) => setTopicContent(e.target.value)}
-                  className={`w-full p-4 border rounded-lg focus:ring-2 focus:ring-purple-500 min-h-[150px] ${
-                    theme === 'dark'
-                      ? 'bg-gray-700 border-gray-600 text-white'
-                      : 'bg-white border-gray-300 text-gray-800'
-                  }`}
-                  placeholder="Mavzu bo'yicha ma'lumotlarni shu yerga yozing..."
-                />
+                <div className="relative">
+                  <textarea
+                    value={topicContent}
+                    onChange={(e) => setTopicContent(e.target.value)}
+                    maxLength={4000}
+                    className={`w-full p-4 border rounded-lg focus:ring-2 focus:ring-purple-500 min-h-[180px] pb-10 ${
+                      theme === 'dark'
+                        ? 'bg-gray-700 border-gray-600 text-white'
+                        : 'bg-white border-gray-300 text-gray-800'
+                    }`}
+                    placeholder="Mavzu bo'yicha ma'lumotlarni shu yerga yozing (matn qanchalik aniq bo'lsa, test shunchalik sifatli bo'ladi)..."
+                  />
+                  <div className={`absolute bottom-3 right-3 px-2 py-1 rounded-md text-xs font-bold shadow-sm ${
+                    topicContent.length >= 3800 
+                      ? 'bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-400' 
+                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                  }`}>
+                    {topicContent.length.toLocaleString()} / 4,000 belgi
+                  </div>
+                </div>
               ) : (
-                <div className={`border-2 border-dashed rounded-lg p-6 text-center ${
+                <div className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
                   theme === 'dark'
-                    ? 'border-gray-600'
-                    : 'border-gray-300'
+                    ? 'border-gray-600 hover:border-purple-500/50'
+                    : 'border-gray-300 hover:border-purple-500/50'
                 }`}>
                   <input
                     type="file"
@@ -324,22 +343,44 @@ const QuizPage = () => {
                     onChange={handleFileUpload}
                     className="hidden"
                     id="file-upload"
+                    disabled={fileLoading}
                   />
-                  <label htmlFor="file-upload" className="cursor-pointer">
-                    <FileText className={`w-10 h-10 mx-auto mb-2 ${
-                      theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                    }`} />
-                    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
-                      Fayl yuklash uchun bosing
-                    </p>
-                    <p className={`text-sm mt-1 ${
-                      theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
-                    }`}>txt, pdf, doc, docx</p>
+                  <label htmlFor="file-upload" className={`cursor-pointer ${fileLoading ? 'opacity-50 cursor-wait' : ''}`}>
+                    {fileLoading ? (
+                      <div className="py-4">
+                        <Loader2 className="w-10 h-10 mx-auto mb-2 animate-spin text-purple-500" />
+                        <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                          Fayl tahlil qilinmoqda...
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <FileText className={`w-10 h-10 mx-auto mb-2 ${
+                          theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                        }`} />
+                        <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                          Fayl yuklash uchun bosing
+                        </p>
+                        <p className={`text-sm mt-1 ${
+                          theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                        }`}>txt, pdf, doc, docx</p>
+                      </>
+                    )}
                   </label>
-                  {topicContent && (
-                    <p className={`mt-3 text-sm ${
-                      theme === 'dark' ? 'text-green-400' : 'text-green-600'
-                    }`}>✓ Fayl yuklandi</p>
+                  {topicContent && !fileLoading && (
+                    <div className="mt-4 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-left">
+                      <p className={`text-sm flex items-center gap-2 ${
+                        theme === 'dark' ? 'text-green-400' : 'text-green-600'
+                      }`}>
+                        <span className="font-bold">✓ Matn yuklandi:</span>
+                        {topicContent.substring(0, 100)}...
+                      </p>
+                      <p className={`text-xs mt-1 ${
+                        theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                      }`}>
+                        Jami: {topicContent.length.toLocaleString()} belgi
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -371,15 +412,15 @@ const QuizPage = () => {
           )}
 
           {error && (
-            <p className={`text-sm ${
+            <p className={`text-sm p-3 rounded-lg bg-red-50 dark:bg-red-900/20 ${
               theme === 'dark' ? 'text-red-400' : 'text-red-500'
             }`}>{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+            disabled={loading || fileLoading}
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-medium rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-lg shadow-purple-600/20"
           >
             {loading ? (
               <>

@@ -105,6 +105,36 @@ async def list_users(db: AsyncSession = Depends(get_db)):
     return result.scalars().all()
 
 
+@router.post("/extract-text")
+async def extract_text(file: UploadFile = File(...)):
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Fayl nomi topilmadi")
+    
+    content = ""
+    extension = file.filename.split('.')[-1].lower()
+    
+    try:
+        file_bytes = await file.read()
+        
+        if extension == 'pdf':
+            import fitz # PyMuPDF
+            doc = fitz.open(stream=file_bytes, filetype="pdf")
+            for page in doc:
+                content += page.get_text()
+            doc.close()
+        elif extension == 'txt':
+            content = file_bytes.decode('utf-8')
+        elif extension in ['doc', 'docx']:
+            # For docx we might need python-docx, but let's try basic text for now
+            # or just support PDF and TXT for now as they are most common
+            content = file_bytes.decode('utf-8', errors='ignore')
+        else:
+            raise HTTPException(status_code=400, detail=f".{extension} format hozircha qo'llab-quvvatlanmaydi")
+            
+        return {"text": content[:10000]} # Limit to 10k chars for safety
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Faylni o'qishda xato: {str(e)}")
+
 @router.post("/generate-quiz")
 async def generate_quiz(request: GenerateQuizRequest, db: AsyncSession = Depends(get_db)):
     try:
@@ -114,6 +144,11 @@ async def generate_quiz(request: GenerateQuizRequest, db: AsyncSession = Depends
             clean_content = re.sub(r'https?://[^\s]*\.(jpg|jpeg|png|gif|image)[^\s]*', '', clean_content, flags=re.IGNORECASE)
             clean_content = re.sub(r'data:image/[^;]+;base64,[A-Za-z0-9+/=]+', '', clean_content)
         
+        print(f"DEBUG: Topic Name: {request.topic_name}")
+        print(f"DEBUG: Topic Content Length: {len(clean_content) if clean_content else 0}")
+        if clean_content:
+            print(f"DEBUG: Topic Content Sample: {clean_content[:100]}")
+
         questions = await quiz_ai.generate_quiz(
             topic_name=request.topic_name,
             topic_content=clean_content or "",
@@ -446,14 +481,27 @@ async def get_dashboard_stats(db: AsyncSession = Depends(get_db)):
             "percentage": s.percentage or 0,
             "user_name": s.student.name if s.student else f"User #{s.student_id}"
         }
-        for s in sorted(sessions, key=lambda x: x.percentage or 0, reverse=True)[:10]
+        for s in sorted(sessions, key=lambda x: x.percentage or 0, reverse=True)[:50]
+    ]
+
+    recent_results = [
+        {
+            "user_id": s.student_id,
+            "topic": s.test.title.replace("Quiz: ", "") if s.test else "Noma'lum",
+            "score": s.total_score or 0,
+            "total": len(s.test.test_questions) if s.test else 0,
+            "percentage": s.percentage or 0,
+            "user_name": s.student.name if s.student else f"User #{s.student_id}"
+        }
+        for s in sorted(sessions, key=lambda x: x.id, reverse=True)[:50]
     ]
     
     return DashboardStats(
         total_quizzes=total_quizzes,
         total_users=total_users,
         average_score=round(average_score, 1),
-        top_scores=top_scores
+        top_scores=top_scores,
+        recent_results=recent_results
     )
 
 @router.get("/categories", response_model=list[CategoryResponse])

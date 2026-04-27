@@ -248,60 +248,70 @@ const Layout = () => {
 
       {/* Footer */}
       {!isTestPage && (
-        <footer className={`mt-auto py-8 border-t ${
-          theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+        <footer className={`mt-auto py-12 border-t ${
+          theme === 'dark' ? 'bg-gray-800/50 border-gray-700' : 'bg-white/50 border-gray-200'
         }`}>
           <div className="max-w-7xl mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
               {/* About */}
               <div className="md:col-span-2">
-                <h3 className={`font-bold text-lg mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
-                  AI Quiz Master
-                </h3>
-                <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Logo />
+                  <span className={`font-bold text-xl ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                    AI Quiz Master
+                  </span>
+                </div>
+                <p className={`text-base leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                   AI yordamida bilimlaringizni tekshiring va rivojlantiring. 
                   Har bir fan bo'yicha testlar yarating va natijalaringizni kuzating.
+                  Loyiha orqali o'z salohiyatingizni maksimal darajada oshiring.
                 </p>
               </div>
 
               {/* Contact */}
               <div>
-                <h4 className={`font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                <h4 className={`font-bold uppercase tracking-wider text-xs mb-4 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                   Bog'lanish
                 </h4>
-                <div className="space-y-2">
-                  <a href="tel:+998337012686" className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
-                    <Phone className={`w-4 h-4 ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`} />
+                <div className="space-y-3">
+                  <a href="tel:+998337012686" className={`group flex items-center gap-3 text-sm transition ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition">
+                      <Phone className="w-4 h-4" />
+                    </div>
                     +998 33 701 26 86
                   </a>
-                  <a href="mailto:komilovjahongir.22@gmail.com" className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-800'}`}>
-                    <Mail className={`w-4 h-4 ${theme === 'dark' ? 'text-white' : 'text-gray-600'}`} />
-                    komilovjahongir.22@gmail.com
+                  <a href="mailto:komilovjahongir.22@gmail.com" className={`group flex items-center gap-3 text-sm transition ${theme === 'dark' ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}>
+                    <div className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/30 transition">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <span className="truncate">komilovjahongir.22@gmail.com</span>
                   </a>
                 </div>
               </div>
 
               {/* Social */}
               <div>
-                <h4 className={`font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-800'}`}>
+                <h4 className={`font-bold uppercase tracking-wider text-xs mb-4 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-400'}`}>
                   Ijtimoiy tarmoqlar
                 </h4>
                 <div className="flex gap-3">
-                  <a href="https://instagram.com/j.komilov__" target="_blank" rel="noopener noreferrer" className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 hover:bg-pink-600' : 'bg-gray-100 hover:bg-pink-100'} transition`}>
-                    <Instagram className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`} />
+                  <a href="https://instagram.com/j.komilov__" target="_blank" rel="noopener noreferrer" 
+                     className={`p-3 rounded-xl transition ${theme === 'dark' ? 'bg-gray-700 hover:bg-pink-600' : 'bg-gray-100 hover:bg-pink-100 hover:text-pink-600'} text-gray-600 dark:text-gray-300`}>
+                    <Instagram className="w-5 h-5" />
                   </a>
-                  <a href="https://t.me/KomilovJahongir_bot" target="_blank" rel="noopener noreferrer" className={`p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 hover:bg-blue-600' : 'bg-gray-100 hover:bg-blue-100'} transition`}>
-                    <Send className={`w-5 h-5 ${theme === 'dark' ? 'text-white' : 'text-gray-700'}`} />
+                  <a href="https://t.me/KomilovJahongir_bot" target="_blank" rel="noopener noreferrer"
+                     className={`p-3 rounded-xl transition ${theme === 'dark' ? 'bg-gray-700 hover:bg-blue-600' : 'bg-gray-100 hover:bg-blue-100 hover:text-blue-600'} text-gray-600 dark:text-gray-300`}>
+                    <Send className="w-5 h-5" />
                   </a>
                 </div>
               </div>
             </div>
 
             {/* Copyright */}
-            <div className={`mt-6 pt-6 border-t text-center text-sm ${
+            <div className={`mt-10 pt-8 border-t text-center text-sm font-medium ${
               theme === 'dark' ? 'text-gray-500 border-gray-700' : 'text-gray-400 border-gray-200'
             }`}>
-              © {new Date().getFullYear()} AI Quiz Master. Barcha huquqlar himoyalangan.
+              © {new Date().getFullYear()} AI Quiz Master • Barcha huquqlar himoyalangan
             </div>
           </div>
         </footer>

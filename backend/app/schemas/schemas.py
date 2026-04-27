@@ -204,6 +204,7 @@ class DashboardStats(BaseModel):
     total_users: int
     average_score: float
     top_scores: List[Dict[str, Any]]
+    recent_results: List[Dict[str, Any]] = []
 
 class CategoryResponse(BaseModel):
     id: int

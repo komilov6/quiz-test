@@ -11,7 +11,10 @@ connect_args = {}
 parsed_url = urlparse(db_url)
 query_params = parse_qs(parsed_url.query)
 
-# SSL talab qilinishini aniqlash (Aiven xostlari uchun avtomatik yoki parametr orqali)
+# Portni aniqlash (Aiven uchun juda muhim)
+db_port = parsed_url.port or 3306
+
+# SSL talab qilinishini aniqlash
 is_ssl_required = (
     "ssl_mode" in query_params or 
     "ssl-mode" in query_params or
@@ -20,9 +23,9 @@ is_ssl_required = (
 )
 
 if is_ssl_required:
-    # URL dan SSL parametrlarini olib tashlash (sqlalchemy/aiomysql uchun connect_args orqali beramiz)
+    # URL dan SSL parametrlarini olib tashlash
     new_query = "&".join([f"{k}={v[0]}" for k, v in query_params.items() if k not in ["ssl_mode", "ssl-mode", "ssl"]])
-    # URL ni qayta yig'ish
+    # URL ni qayta yig'ish (portni saqlab qolgan holda)
     db_url = parsed_url._replace(query=new_query).geturl()
     
     # SSL context yaratish
@@ -30,6 +33,10 @@ if is_ssl_required:
     ssl_ctx.check_hostname = False
     ssl_ctx.verify_mode = ssl.CERT_NONE
     connect_args["ssl"] = ssl_ctx
+
+# Portni connect_args orqali ham berib ko'ramiz (ba'zan aiomysql URL dagi portni ko'rmaydi)
+# Lekin create_async_engine o'zi URL dagi portni tanishi kerak. 
+# Agarda baribir 3306 ga ulanayotgan bo'lsa, bu yerda muammo bor.
 
 engine = create_async_engine(db_url, echo=settings.DEBUG, connect_args=connect_args)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -45,9 +52,10 @@ async def get_db():
 
 async def init_db():
     try:
+        # Ulanishdan oldin log chiqarish (faqat debug uchun)
+        print(f"DEBUG: Connecting to {parsed_url.hostname}:{db_port}...")
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
     except Exception as e:
         print(f"DATABASE CONNECTION ERROR: {str(e)}")
-        # Xatoni qayta ko'tarish (startup fail bo'lishi uchun)
         raise e
